@@ -32,9 +32,19 @@ Orderflow to aplikacja oparta o architekturę mikroserwisową, służąca do obs
 ├── frontend/
 │   ├── Dockerfile         
 │   └── .dockerignore     
-├── backend-api/
-│   ├── Dockerfile         
-│   └── .dockerignore      
+backend-api/
+├── src/
+│   ├── controllers/   
+│   ├── middleware/    
+│   ├── models/        # Modele Prisma 
+│   ├── routes/        
+│   ├── services/      
+│   ├── utils/         
+│   └── server.ts      # Główny plik serwera
+├── prisma/            # Schema bazy danych
+├── package.json
+├── tsconfig.json
+└── Dockerfile   
 ├── order-service/
 │   ├── Dockerfile         
 │   └── .dockerignore      
