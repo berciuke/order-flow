@@ -24,17 +24,23 @@ Orderflow to aplikacja oparta o architekturę mikroserwisową, służąca do obs
 
 - **Kolejka zdarzeń**: RabbitMQ – asynchroniczna komunikacja między mikroserwisami.
 - **Baza danych**: PostgreSQL (dane strukturalne).
-- **Cache**: Redis (do cache’owania danych).
+- **Cache**: Redis (do cache'owania danych).
 
 ## Struktura katalogów
 
 ```plaintext
-├── frontend
-├── backend-api
-├── order-service
+├── frontend/
+│   ├── Dockerfile         
+│   └── .dockerignore     
+├── backend-api/
+│   ├── Dockerfile         
+│   └── .dockerignore      
+├── order-service/
+│   ├── Dockerfile         
+│   └── .dockerignore      
 ├── docker-compose.yml
-├── Dockerfiles
-├── k8s-manifests
-├── .dockerignore
-├── README.md
-└── docs
+├── k8s-manifests/        
+├── docs/                  
+├── .gitignore             
+├── README.md              
+└── ... (inne pliki konfiguracyjne, skrypty, itp. na poziomie głównym)
