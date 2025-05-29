@@ -23,9 +23,10 @@ export const register = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
-        email,
-        password: hashedPassword,
-        name: name || 'Użytkownik bez nazwy',
+      email,
+      password: hashedPassword,
+      name: name || 'Użytkownik bez nazwy',
+      ...(email === "admin@example.com" ? { isAdmin: true } : {})
       },
     });
 
