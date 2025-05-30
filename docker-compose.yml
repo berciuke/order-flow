@@ -1,4 +1,3 @@
-# backend-api
 services:
   backend-api:
     build:
@@ -20,9 +19,8 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - orderflow-net
+      - app-network
 
-  # postgres
   postgres:
     image: postgres:16
     environment:
@@ -39,22 +37,50 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - orderflow-net
+      - app-network
 
-# networks
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_BACKEND_URL=http://backend-api:8000
+    depends_on:
+      - backend-api
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/index.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend-dev:
+    container_name: frontend-dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules 
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true 
+      - WATCHPACK_POLLING=true   
+    networks:
+      - app-network
+    depends_on:
+      - backend-api
+    stdin_open: true 
+    tty: true        
+
 networks:
-  orderflow-net:
+  app-network:
     driver: bridge
 
-# volumes
 volumes:
   pgdata:
-
-# Aby uruchomić wszystkie usługi, użyj polecenia:
-# docker compose up --build
-#
-# Aby zatrzymać usługi:
-# docker compose down
-#
-# Aby usunąć wolumeny (uwaga, dane zostaną utracone!):
-# docker compose down -v
