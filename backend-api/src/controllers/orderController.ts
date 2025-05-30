@@ -1,7 +1,7 @@
-import { Response } from 'express';
-import { PrismaClient, OrderStatus, Prisma } from '@prisma/client';
-import { createOrderSchema } from '../validators/orderValidator';
-import { Request as ExpressRequest } from 'express';
+import { Response } from "express";
+import { PrismaClient, OrderStatus, Prisma } from "@prisma/client";
+import { createOrderSchema } from "../validators/orderValidator";
+import { Request as ExpressRequest } from "express";
 
 const prisma = new PrismaClient();
 
@@ -9,17 +9,23 @@ interface AuthRequest extends ExpressRequest {
   user?: { userId: string; isAdmin: boolean };
 }
 
-// POST /api/orders - Tworzenie zamówienia
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Musisz być zalogowany, aby złożyć zamówienie.' });
+      return res
+        .status(401)
+        .json({ message: "Musisz być zalogowany, aby złożyć zamówienie." });
     }
     const userId = req.user.userId;
 
     const { error, value } = createOrderSchema.validate(req.body);
     if (error) {
-      return res.status(400).json({ message: 'Błąd walidacji', details: error.details.map(d => d.message) });
+      return res
+        .status(400)
+        .json({
+          message: "Błąd walidacji",
+          details: error.details.map((d) => d.message),
+        });
     }
 
     const { items } = value; // items: [{ productId, quantity }]
@@ -28,20 +34,30 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     const orderItemsData: Prisma.OrderItemCreateWithoutOrderInput[] = [];
 
     for (const item of items) {
-      const product = await prisma.product.findUnique({ where: { id: item.productId } });
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId },
+      });
       if (!product) {
-        return res.status(404).json({ message: `Produkt o ID ${item.productId} nie został znaleziony.` });
+        return res
+          .status(404)
+          .json({
+            message: `Produkt o ID ${item.productId} nie został znaleziony.`,
+          });
       }
       if (product.stock < item.quantity) {
-        return res.status(400).json({ message: `Niewystarczająca ilość produktu ${product.name} na stanie. Dostępne: ${product.stock}, zamówiono: ${item.quantity}.` });
+        return res
+          .status(400)
+          .json({
+            message: `Niewystarczająca ilość produktu ${product.name} na stanie. Dostępne: ${product.stock}, zamówiono: ${item.quantity}.`,
+          });
       }
       totalAmount += product.price * item.quantity;
       orderItemsData.push({
         quantity: item.quantity,
-        price: product.price, 
-        product: { 
-          connect: { id: item.productId }
-        }
+        price: product.price,
+        product: {
+          connect: { id: item.productId },
+        },
       });
     }
 
@@ -55,7 +71,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
             create: orderItemsData,
           },
         },
-        include: { items: true }, 
+        include: { items: true },
       });
 
       for (const item of items) {
@@ -68,19 +84,23 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     });
 
     res.status(201).json(order);
-
   } catch (error) {
-    console.error('Błąd podczas tworzenia zamówienia:', error);
+    console.error("Błąd podczas tworzenia zamówienia:", error);
     // tu by można było dodać szczegółową obsługę błędów, ale to nie jest przedmiot backend development :-)
-    res.status(500).json({ message: 'Wystąpił błąd serwera podczas tworzenia zamówienia.' });
+    res
+      .status(500)
+      .json({ message: "Wystąpił błąd serwera podczas tworzenia zamówienia." });
   }
 };
 
-// GET /api/orders - Lista zamówień użytkownika
 export const getUserOrders = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Musisz być zalogowany, aby zobaczyć swoje zamówienia.' });
+      return res
+        .status(401)
+        .json({
+          message: "Musisz być zalogowany, aby zobaczyć swoje zamówienia.",
+        });
     }
     const userId = req.user.userId;
 
@@ -90,27 +110,32 @@ export const getUserOrders = async (req: AuthRequest, res: Response) => {
         items: {
           include: {
             product: {
-              select: { id: true, name: true } 
-            }
-          }
-        }
+              select: { id: true, name: true },
+            },
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: "desc",
+      },
     });
     res.status(200).json(orders);
   } catch (error) {
-    console.error('Błąd podczas pobierania zamówień użytkownika:', error);
-    res.status(500).json({ message: 'Wystąpił błąd serwera podczas pobierania zamówień.' });
+    console.error("Błąd podczas pobierania zamówień użytkownika:", error);
+    res
+      .status(500)
+      .json({ message: "Wystąpił błąd serwera podczas pobierania zamówień." });
   }
 };
 
-// GET /api/orders/:id - Szczegóły konkretnego zamówienia
 export const getOrderById = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Musisz być zalogowany, aby zobaczyć szczegóły zamówienia.' });
+      return res
+        .status(401)
+        .json({
+          message: "Musisz być zalogowany, aby zobaczyć szczegóły zamówienia.",
+        });
     }
     const userId = req.user.userId;
     const { id: orderId } = req.params;
@@ -121,27 +146,34 @@ export const getOrderById = async (req: AuthRequest, res: Response) => {
         items: {
           include: {
             product: {
-              select: { id: true, name: true, description: true, price: true }
-            }
-          }
+              select: { id: true, name: true, description: true, price: true },
+            },
+          },
         },
         user: {
-            select: { id: true, name: true, email: true }
-        }
+          select: { id: true, name: true, email: true },
+        },
       },
     });
 
     if (!order) {
-      return res.status(404).json({ message: 'Zamówienie nie znalezione.' });
+      return res.status(404).json({ message: "Zamówienie nie znalezione." });
     }
 
     if (order.userId !== userId && !req.user.isAdmin) {
-      return res.status(403).json({ message: 'Nie masz uprawnień, aby wyświetlić to zamówienie.' });
+      return res
+        .status(403)
+        .json({ message: "Nie masz uprawnień, aby wyświetlić to zamówienie." });
     }
 
     res.status(200).json(order);
   } catch (error) {
-    console.error('Błąd podczas pobierania szczegółów zamówienia:', error);
-    res.status(500).json({ message: 'Wystąpił błąd serwera podczas pobierania szczegółów zamówienia.' });
+    console.error("Błąd podczas pobierania szczegółów zamówienia:", error);
+    res
+      .status(500)
+      .json({
+        message:
+          "Wystąpił błąd serwera podczas pobierania szczegółów zamówienia.",
+      });
   }
-}; 
+};

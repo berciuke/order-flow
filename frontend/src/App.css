@@ -1,0 +1,503 @@
+:root {
+  --background-color: #1E1E1E; /* Ciemne tło główne */
+  --surface-color: #2D2D2D;    /* Tło dla kart, formularzy itp. */
+  --primary-color: #BB86FC;   /* Główny kolor akcentu (fioletowy) */
+  --secondary-color: #03DAC6; /* Drugi kolor akcentu (turkusowy) */
+  --on-background-color: #E0E0E0; /* Kolor tekstu na tle głównym */
+  --on-surface-color: #FFFFFF;  /* Kolor tekstu na powierzchniach */
+  --error-color: #CF6679;      /* Kolor dla błędów */
+  --border-color: #444444;     /* Kolor ramek */
+
+  --font-primary: 'Inter', sans-serif;
+  --font-monospace: 'Roboto Mono', monospace;
+
+  --border-radius: 8px;
+  --padding-base: 16px;
+  --padding-large: 24px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-primary);
+  background-color: var(--background-color);
+  color: var(--on-background-color);
+  line-height: 1.6;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  background-color: var(--surface-color);
+  padding: var(--padding-base) var(--padding-large);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-header h1 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 1.8em;
+}
+
+.app-header nav button {
+  background-color: transparent;
+  color: var(--on-surface-color);
+  border: 1px solid var(--primary-color);
+  padding: 8px 16px;
+  margin-left: 10px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-header nav button:hover {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  color: var(--on-surface-color);
+}
+
+.user-info span {
+  margin-right: 15px;
+  font-size: 0.9em;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: var(--padding-large);
+  display: flex;
+  flex-direction: column; /* Domyślnie kolumna, dla widoków produktów/zamówień zmienimy */
+  gap: var(--padding-large);
+}
+
+.error-message {
+  background-color: var(--error-color);
+  color: var(--on-surface-color);
+  padding: var(--padding-base);
+  margin: var(--padding-large) var(--padding-large) 0;
+  border-radius: var(--border-radius);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-message button {
+  background: none;
+  border: none;
+  color: var(--on-surface-color);
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
+/* Styl dla formularzy autentykacji */
+.auth-form-container {
+  background-color: var(--surface-color);
+  padding: var(--padding-large);
+  border-radius: var(--border-radius);
+  max-width: 400px;
+  margin: 20px auto; /* Wyśrodkowanie */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.auth-form-container h2 {
+  color: var(--primary-color);
+  text-align: center;
+  margin-bottom: var(--padding-base);
+}
+
+.auth-form .form-group {
+  margin-bottom: var(--padding-base);
+}
+
+.auth-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--on-surface-color);
+  font-weight: 500;
+}
+
+.auth-form input[type="email"],
+.auth-form input[type="password"],
+.auth-form input[type="text"] {
+  width: calc(100% - 20px); /* Uwzględnienie paddingu */
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  background-color: var(--background-color);
+  color: var(--on-surface-color);
+  border-radius: var(--border-radius);
+  font-size: 1em;
+}
+
+.auth-form .submit-button {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.auth-form .submit-button:hover {
+  background-color: var(--secondary-color);
+}
+
+/* Styl dla widoku produktów */
+.products-view h2, .orders-list-view h2, .current-order-view h2 {
+  color: var(--primary-color);
+  margin-bottom: var(--padding-base);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--padding-base);
+}
+
+.product-tile {
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  padding: var(--padding-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative; /* Dla przycisków admina */
+  aspect-ratio: 1 / 1; /* Kwadratowe kafelki */
+}
+
+.product-tile:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.product-initial {
+  width: 80px;
+  height: 80px;
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5em;
+  font-weight: bold;
+  border-radius: 50%; /* Okrągłe tło dla litery */
+  margin-bottom: 10px;
+}
+
+.product-info h3 {
+  margin: 10px 0 5px;
+  color: var(--on-surface-color);
+  font-size: 1.1em;
+}
+
+.product-info p {
+  margin: 0;
+  font-size: 0.9em;
+  color: var(--on-background-color);
+}
+
+.admin-actions {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    gap: 5px;
+}
+
+.admin-actions button {
+    padding: 5px 8px;
+    font-size: 0.8em;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+}
+
+.edit-btn {
+    background-color: var(--secondary-color);
+    color: var(--background-color);
+    border: none;
+}
+
+.delete-btn {
+    background-color: var(--error-color);
+    color: var(--on-surface-color);
+    border: none;
+}
+
+
+/* Styl dla JSON Viewer */
+.json-viewer-aside {
+  background-color: var(--surface-color);
+  padding: var(--padding-base);
+  margin-top: var(--padding-large);
+  border-radius: var(--border-radius);
+  max-height: 400px; /* Ograniczenie wysokości */
+  overflow-y: auto; /* Scroll jeśli zawartość jest za długa */
+}
+
+.json-viewer-aside h3 {
+  color: var(--secondary-color);
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.json-viewer-aside pre {
+  background-color: var(--background-color); /* Ciemniejsze tło dla kodu */
+  color: var(--on-background-color);
+  padding: 10px;
+  border-radius: var(--border-radius);
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  white-space: pre-wrap; /* Zawijanie długich linii */
+  word-break: break-all; /* Łamanie słów */
+}
+
+.json-viewer-aside button {
+    display: block;
+    margin-top: 10px;
+    padding: 8px 15px;
+    background-color: var(--primary-color);
+    color: var(--background-color);
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+}
+
+.json-viewer-aside button:hover {
+    background-color: var(--secondary-color);
+}
+
+/* Style dla widoku aktualnego zamówienia (koszyka) */
+.current-order-view {
+    background-color: var(--surface-color);
+    padding: var(--padding-base);
+    border-radius: var(--border-radius);
+    margin-top: var(--padding-base); /* Odstęp od produktów lub headera */
+  }
+  
+  .current-order-view.full-width-order {
+    width: 100%; /* Jeśli to główny widok zamówień, niech zajmuje całą szerokość */
+  }
+
+  .current-order-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .current-order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .current-order-item:last-child {
+    border-bottom: none;
+  }
+  
+  .current-order-item span {
+    flex-basis: 30%;
+  }
+  
+  .quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .quantity-controls button {
+    background-color: var(--primary-color);
+    color: var(--background-color);
+    border: none;
+    border-radius: 4px;
+    width: 25px;
+    height: 25px;
+    font-size: 1em;
+    cursor: pointer;
+  }
+  
+  .quantity-controls .remove-item-btn {
+    background-color: var(--error-color);
+    color: var(--on-surface-color);
+    padding: 0 5px;
+    font-size: 0.8em;
+    width: auto;
+  }
+  
+  .current-order-summary {
+    margin-top: var(--padding-base);
+    text-align: right;
+  }
+  
+  .current-order-summary p {
+    font-size: 1.2em;
+    margin-bottom: var(--padding-base);
+  }
+  
+  .place-order-button {
+    padding: 12px 25px;
+    background-color: var(--secondary-color);
+    color: var(--background-color);
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .place-order-button:hover {
+    background-color: var(--primary-color);
+  }
+  
+  /* Styl dla listy zamówień użytkownika */
+  .orders-list-view {
+    display: flex;
+    flex-direction: column;
+    gap: var(--padding-base);
+  }
+  
+  .order-summary-card {
+    background-color: var(--surface-color);
+    padding: var(--padding-base);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  
+  .order-summary-card h3 {
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  
+  .order-summary-card p {
+    margin: 5px 0;
+    font-size: 0.95em;
+  }
+
+  .order-summary-card h4 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: var(--on-surface-color);
+    font-size: 1em;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+  }
+  
+  .order-summary-card ul {
+    list-style: none;
+    padding-left: 0; /* Usunięcie domyślnego wcięcia listy */
+    font-size: 0.9em;
+  }
+  
+  .order-summary-card li {
+    padding: 3px 0;
+    color: var(--on-background-color);
+  }
+
+  .status-pending { color: #f39c12; font-weight: bold; } /* Pomarańczowy */
+  .status-processing { color: #3498db; font-weight: bold; } /* Niebieski */
+  .status-shipped { color: #2ecc71; font-weight: bold; } /* Zielony */
+  .status-delivered { color: #1abc9c; font-weight: bold; } /* Ciemniejszy zielony/turkusowy */
+  .status-cancelled { color: var(--error-color); font-weight: bold; } /* Czerwony */
+  .status-refunded { color: #95a5a6; font-weight: bold; } /* Szary */
+
+/* Footer */
+.app-footer {
+  background-color: var(--surface-color);
+  color: var(--on-background-color);
+  text-align: center;
+  padding: var(--padding-base);
+  border-top: 1px solid var(--border-color);
+  font-size: 0.9em;
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .app-header nav {
+    margin-top: 10px;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap; /* Przyciski mogą się zawijać */
+    gap: 5px;
+  }
+
+  .app-header nav button {
+    flex-grow: 1; /* Przyciski zajmują dostępną przestrzeń */
+    margin-left: 0;
+  }
+  
+  .user-info {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .main-content {
+    padding: var(--padding-base);
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Mniejsze kafelki na mobilkach */
+  }
+
+  .product-initial {
+    width: 60px;
+    height: 60px;
+    font-size: 2em;
+  }
+
+  .current-order-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .quantity-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .json-viewer-aside {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 480px) {
+    .products-grid {
+        grid-template-columns: 1fr; /* Pojedyncza kolumna na bardzo małych ekranach */
+    }
+    .app-header h1 {
+        font-size: 1.5em;
+    }
+    .app-header nav button, .auth-form .submit-button, .place-order-button {
+        font-size: 0.9em;
+        padding: 10px;
+    }
+    .user-info span {
+        font-size: 0.8em;
+    }
+} 
