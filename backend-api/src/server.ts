@@ -12,20 +12,23 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
-
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
-      callback(new Error('Niedozwolone przez CORS'));
+      const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Niedozwolone przez CORS'));
+      }
     }
   },
   credentials: true,  
 };
 
-app.use(cors(corsOptions)); 
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
