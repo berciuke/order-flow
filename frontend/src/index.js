@@ -1,11 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css'; // Globalne style, jeśli będą potrzebne
+import './index.css'; 
 import App from './App';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <NotificationProvider>
+      <App />
+    </NotificationProvider>
   </React.StrictMode>
 ); 

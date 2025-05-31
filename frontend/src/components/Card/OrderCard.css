@@ -1,0 +1,106 @@
+.order-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--padding-base);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.order-card__title {
+  color: var(--primary-color);
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.order-card__status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.order-card__info {
+  margin-bottom: var(--padding-base);
+}
+
+.order-card__info p {
+  margin: 4px 0;
+  color: var(--on-surface-color);
+  font-size: 0.9em;
+}
+
+.order-card__date strong,
+.order-card__total strong,
+.order-card__user strong {
+  color: var(--primary-color);
+}
+
+.order-card__items {
+  margin-bottom: var(--padding-base);
+}
+
+.order-card__items h4 {
+  color: var(--primary-color);
+  margin: 0 0 8px 0;
+  font-size: 1em;
+}
+
+.order-card__items-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.order-card__item {
+  padding: 4px 0;
+  color: var(--on-surface-color);
+  font-size: 0.85em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.order-card__item:last-child {
+  border-bottom: none;
+}
+
+.order-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.order-card__action-btn {
+  flex: 1;
+}
+
+.status-pending { 
+  color: #f39c12; 
+  background-color: rgba(243, 156, 18, 0.1);
+}
+
+.status-processing { 
+  color: #3498db; 
+  background-color: rgba(52, 152, 219, 0.1);
+}
+
+.status-shipped { 
+  color: #2ecc71; 
+  background-color: rgba(46, 204, 113, 0.1);
+}
+
+.status-delivered { 
+  color: #1abc9c; 
+  background-color: rgba(26, 188, 156, 0.1);
+}
+
+.status-cancelled { 
+  color: var(--error-color); 
+  background-color: rgba(207, 102, 121, 0.1);
+}
+
+.status-refunded { 
+  color: #95a5a6; 
+  background-color: rgba(149, 165, 166, 0.1);
+} 
