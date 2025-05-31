@@ -1,31 +1,45 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
+import ApiDebuggerHistory from './ApiDebuggerHistory';
 
-// Stała z adresem bazowym API, aby łatwo ją zmieniać
-const API_BASE_URL = 'http://localhost:8000/'; // Zakładam, że backend działa na porcie 8000
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [currentUser, setCurrentUser] = useState(null);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [currentOrderItems, setCurrentOrderItems] = useState([]); // { productId, quantity, name, price }
-  const [jsonResponse, setJsonResponse] = useState(null);
-  const [view, setView] = useState('products'); // 'products', 'orders', 'login', 'register'
+  const [currentOrderItems, setCurrentOrderItems] = useState([]); 
+  const [view, setView] = useState('products'); 
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [apiResponses, setApiResponses] = useState([]);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null); 
+  const [productFormData, setProductFormData] = useState({ name: '', description: '', price: '', stock: '' });
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
 
-  const handleApiResponse = (data) => {
-    setJsonResponse(JSON.stringify(data, null, 2));
+  const addApiResponse = (url, status, bodyObject, method = 'GET') => {
+    const newResponse = {
+      timestamp: new Date().toLocaleString(),
+      method, 
+      url: url,
+      status: status,
+      body: JSON.stringify(bodyObject, null, 2),
+    };
+    setApiResponses(prevResponses => [newResponse, ...prevResponses]);
   };
 
   const fetchUserProfile = useCallback(async () => {
     if (!token) return;
+    const endpoint = '/api/users/profile';
+    const method = 'GET';
     try {
-      const res = await fetch(`${API_BASE_URL}/users/profile`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      handleApiResponse(data);
+      addApiResponse(endpoint, res.status, data, method);
       if (res.ok) {
         setCurrentUser(data);
       } else {
@@ -33,6 +47,7 @@ function App() {
       }
     } catch (err) {
       setError(`Błąd profilu: ${err.message}`);
+      addApiResponse(endpoint, err.response?.status || 500, { error: err.message }, method);
       localStorage.removeItem('token');
       setToken(null);
       setCurrentUser(null);
@@ -46,11 +61,13 @@ function App() {
     }
   }, [token, fetchUserProfile]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
+    const endpoint = '/api/products';
+    const method = 'GET';
     try {
-      const res = await fetch(`${API_BASE_URL}/products`);
+      const res = await fetch(`${API_BASE_URL}${endpoint}`);
       const data = await res.json();
-      handleApiResponse(data);
+      addApiResponse(endpoint, res.status, data, method);
       if (res.ok) {
         setProducts(data);
       } else {
@@ -58,17 +75,20 @@ function App() {
       }
     } catch (err) {
       setError(`Błąd produktów: ${err.message}`);
+      addApiResponse(endpoint, err.response?.status || 500, { error: err.message }, method);
     }
-  };
+  }, []);
 
   const fetchOrders = useCallback(async () => {
     if (!token) return;
+    const endpoint = '/api/orders';
+    const method = 'GET';
     try {
-      const res = await fetch(`${API_BASE_URL}/orders`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      handleApiResponse(data);
+      addApiResponse(endpoint, res.status, data, method);
       if (res.ok) {
         setOrders(data);
       } else {
@@ -76,6 +96,29 @@ function App() {
       }
     } catch (err) {
       setError(`Błąd zamówień: ${err.message}`);
+      addApiResponse(endpoint, err.response?.status || 500, { error: err.message }, method);
+    }
+  }, [token]);
+
+  const fetchOrderDetails = useCallback(async (orderId) => {
+    if (!token) return;
+    const endpoint = `/api/orders/${orderId}`;
+    const method = 'GET';
+    try {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      addApiResponse(endpoint, res.status, data, method);
+      if (res.ok) {
+        setSelectedOrderDetails(data);
+      } else {
+        throw new Error(data.message || 'Nie udało się pobrać szczegółów zamówienia.');
+      }
+    } catch (err) {
+      setError(`Błąd szczegółów zamówienia: ${err.message}`);
+      addApiResponse(endpoint, err.response?.status || 500, { error: err.message }, method);
+      alert(`Błąd pobierania szczegółów zamówienia: ${err.message}`);
     }
   }, [token]);
 
@@ -84,21 +127,27 @@ function App() {
     if (token) {
       fetchOrders();
     }
-  }, [token, fetchOrders]);
+  }, [token, fetchOrders, fetchProducts]);
+
+  const clearApiHistory = () => {
+    setApiResponses([]);
+  };
 
   const handleLogin = async (email, password) => {
+    const endpoint = '/api/auth/login';
+    const method = 'POST';
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      handleApiResponse(data);
+      addApiResponse(endpoint, res.status, data, method);
       if (res.ok && data.token) {
         localStorage.setItem('token', data.token);
         setToken(data.token);
-        setCurrentUser({ id: data.userId, isAdmin: data.isAdmin }); // Tymczasowe, pełny profil pobierze useEffect
+        setCurrentUser({ id: data.userId, isAdmin: data.isAdmin }); 
         setView('products');
         setError('');
       } else {
@@ -106,19 +155,22 @@ function App() {
       }
     } catch (err) {
       setError(`Logowanie: ${err.message}`);
+      addApiResponse(endpoint, err.response?.status || 500, { error: err.message }, method);
       alert(`Błąd logowania: ${err.message}`);
     }
   };
 
   const handleRegister = async (email, password, name) => {
+    const endpoint = '/api/auth/register';
+    const method = 'POST';
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name }),
       });
       const data = await res.json();
-      handleApiResponse(data);
+      addApiResponse(endpoint, res.status, data, method);
       if (res.status === 201) {
         alert('Rejestracja pomyślna! Możesz się teraz zalogować.');
         setView('login');
@@ -128,6 +180,7 @@ function App() {
       }
     } catch (err) {
       setError(`Rejestracja: ${err.message}`);
+      addApiResponse(endpoint, err.response?.status || 500, { error: err.message }, method);
       alert(`Błąd rejestracji: ${err.message}`);
     }
   };
@@ -139,7 +192,6 @@ function App() {
     setOrders([]);
     setCurrentOrderItems([]);
     setView('login');
-    setJsonResponse(null);
     setError('');
   };
 
@@ -174,9 +226,11 @@ function App() {
       alert('Musisz być zalogowany i mieć produkty w koszyku, aby złożyć zamówienie.');
       return;
     }
+    const endpoint = '/api/orders';
+    const method = 'POST';
     try {
-      const res = await fetch(`${API_BASE_URL}/orders`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -184,18 +238,98 @@ function App() {
         body: JSON.stringify({ items: currentOrderItems.map(item => ({ productId: item.productId, quantity: item.quantity })) }),
       });
       const data = await res.json();
-      handleApiResponse(data);
+      addApiResponse(endpoint, res.status, data, method);
       if (res.status === 201) {
         alert('Zamówienie złożone pomyślnie!');
         setCurrentOrderItems([]);
-        fetchOrders(); // Odśwież listę zamówień
+        fetchOrders(); 
         setView('orders');
       } else {
         throw new Error(data.message || 'Nie udało się złożyć zamówienia.');
       }
     } catch (err) {
       setError(`Składanie zamówienia: ${err.message}`);
+      addApiResponse(endpoint, err.response?.status || 500, { error: err.message }, method);
       alert(`Błąd składania zamówienia: ${err.message}`);
+    }
+  };
+
+  const handleProductFormChange = (e) => {
+    const { name, value } = e.target;
+    setProductFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const openProductModal = (product = null) => {
+    if (product) {
+      setEditingProduct(product);
+      setProductFormData({ name: product.name, description: product.description, price: product.price, stock: product.stock });
+    } else {
+      setEditingProduct(null);
+      setProductFormData({ name: '', description: '', price: '', stock: '' });
+    }
+    setShowProductModal(true);
+  };
+
+  const closeProductModal = () => {
+    setShowProductModal(false);
+    setEditingProduct(null);
+    setProductFormData({ name: '', description: '', price: '', stock: '' });
+  };
+
+  const handleSaveProduct = async () => {
+    if (!token || !currentUser?.isAdmin) {
+      alert('Brak uprawnień.');
+      return;
+    }
+
+    const { name, description, price, stock } = productFormData;
+    if (!name || !description || price === '' || stock === '') {
+        alert('Wszystkie pola są wymagane.');
+        return;
+    }
+    
+    const productData = {
+        name,
+        description,
+        price: parseFloat(price),
+        stock: parseInt(stock, 10)
+    };
+
+    if (isNaN(productData.price) || isNaN(productData.stock)) {
+        alert('Cena i ilość w magazynie muszą być liczbami.');
+        return;
+    }
+
+
+    let endpoint = '/api/products';
+    let method = 'POST';
+    if (editingProduct) {
+      endpoint = `/api/products/${editingProduct.id}`;
+      method = 'PUT';
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(productData),
+      });
+      const data = await res.json();
+      addApiResponse(endpoint, res.status, data, method);
+      if (res.ok || res.status === 201) {
+        alert(`Produkt ${editingProduct ? 'zaktualizowany' : 'dodany'} pomyślnie!`);
+        closeProductModal();
+        fetchProducts(); 
+      } else {
+        throw new Error(data.message || `Nie udało się ${editingProduct ? 'zaktualizować' : 'dodać'} produktu.`);
+      }
+    } catch (err) {
+      setError(`Zapis produktu: ${err.message}`);
+      addApiResponse(endpoint, err.response?.status || 500, { error: err.message }, method);
+      alert(`Błąd zapisu produktu: ${err.message}`);
     }
   };
 
@@ -204,32 +338,35 @@ function App() {
         alert('Brak uprawnień.');
         return;
     }
-    if (!window.confirm('Czy na pewno chcesz usunąć ten produkt?')) return;
-
+    const endpoint = `/api/products/${productId}`;
+    const method = 'DELETE';
     try {
-        const res = await fetch(`${API_BASE_URL}/products/${productId}`, {
-            method: 'DELETE',
+        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: method,
             headers: { 'Authorization': `Bearer ${token}` },
         });
-        // Brak body w odpowiedzi 204
-        handleApiResponse({ status: res.status, statusText: res.statusText });
+        addApiResponse(endpoint, res.status, res.status === 204 ? { message: 'Produkt usunięty' } : await res.json(), method);
         if (res.ok) {
-            alert('Produkt usunięty.');
-            fetchProducts(); // Odśwież listę
+            alert('Produkt usunięty!');
+            fetchProducts(); 
         } else {
-            const data = await res.json().catch(() => ({ message: 'Błąd serwera przy usuwaniu produktu.'}));
+            const data = await res.json();
             throw new Error(data.message || 'Nie udało się usunąć produktu.');
         }
     } catch (err) {
         setError(`Usuwanie produktu: ${err.message}`);
+        if (err.message.includes("Unexpected end of JSON input") && err.response?.status === 204) {
+             addApiResponse(endpoint, 204, { message: 'Produkt usunięty (info po błędzie parsowania)' }, method);
+        } else {
+             addApiResponse(endpoint, err.response?.status || 500, { error: err.message }, method);
+        }
         alert(`Błąd usuwania produktu: ${err.message}`);
     }
   };
   
-  // TODO: Funkcja edycji produktu (otwarcie modala/formularza)
+  // TODO: edycja produktu
   const editProduct = (product) => {
     alert(`Funkcjonalność edycji produktu (ID: ${product.id}) nie jest jeszcze zaimplementowana.`);
-    // Tutaj logika otwarcia formularza edycji, np. ustawienie stanu dla modala
   };
 
   return (
@@ -262,7 +399,7 @@ function App() {
             onAddToCart={addProductToOrder} 
             currentUser={currentUser}
             onDeleteProduct={deleteProduct}
-            onEditProduct={editProduct}
+            onEditProduct={openProductModal}
           />
         )}
 
@@ -271,20 +408,28 @@ function App() {
             items={currentOrderItems} 
             onUpdateQuantity={updateOrderItemQuantity}
             onPlaceOrder={handlePlaceOrder}
-            isOrderView={view === 'orders'} // Przekaż informację, czy to główny widok zamówień
+            isOrderView={view === 'orders'} 
           />
         )}
 
-        {token && view === 'orders' && <OrdersListView orders={orders} />}
+        {token && view === 'orders' && <OrdersListView orders={orders} onViewDetails={fetchOrderDetails} />}
+
+        {selectedOrderDetails && (
+          <OrderDetailsView order={selectedOrderDetails} onClose={() => setSelectedOrderDetails(null)} />
+        )}
+
+        {showProductModal && currentUser?.isAdmin && (
+          <ProductFormModal
+            product={editingProduct}
+            formData={productFormData}
+            onChange={handleProductFormChange}
+            onSave={handleSaveProduct}
+            onClose={closeProductModal}
+          />
+        )}
       </main>
 
-      {jsonResponse && (
-        <aside className="json-viewer-aside">
-          <h3>Ostatnia odpowiedź API:</h3>
-          <pre>{jsonResponse}</pre>
-          <button onClick={() => setJsonResponse(null)}>Ukryj JSON</button>
-        </aside>
-      )}
+      <ApiDebuggerHistory apiResponses={apiResponses} clearHistory={clearApiHistory} />
 
       <footer className="app-footer">
         <p>&copy; 2024 OrderFlow App</p>
@@ -293,11 +438,10 @@ function App() {
   );
 }
 
-// Komponent formularza autentykacji
 function AuthForm({ type, onSubmit }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState(''); // Tylko dla rejestracji
+  const [name, setName] = useState(''); 
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -332,28 +476,30 @@ function AuthForm({ type, onSubmit }) {
   );
 }
 
-// Komponent widoku produktów
 function ProductsView({ products, onAddToCart, currentUser, onDeleteProduct, onEditProduct }) {
   if (!products || products.length === 0) {
-    return <p>Brak produktów do wyświetlenia.</p>;
+    return <p>Ładowanie produktów lub brak produktów do wyświetlenia.</p>;
   }
   return (
     <div className="products-view">
       <h2>Produkty</h2>
-      <div className="products-grid">
+      {currentUser?.isAdmin && <button onClick={() => onEditProduct()} className="add-product-btn">Dodaj Nowy Produkt</button>}
+      <div className="product-list">
         {products.map(product => (
-          <div key={product.id} className="product-tile" onClick={() => onAddToCart(product)}>
-            <div className="product-initial">{product.name?.charAt(0).toUpperCase() || 'P'}</div>
-            <div className="product-info">
-                <h3>{product.name}</h3>
-                <p>Cena: {product.price?.toFixed(2)} PLN</p>
-                <p>Na stanie: {product.stock}</p>
-            </div>
-            {currentUser?.isAdmin && (
-                <div className="admin-actions">
-                    <button className="edit-btn" onClick={(e) => { e.stopPropagation(); onEditProduct(product); }}>Edytuj</button>
-                    <button className="delete-btn" onClick={(e) => { e.stopPropagation(); onDeleteProduct(product.id); }}>Usuń</button>
-                </div>
+          <div key={product.id} className="product-item">
+            <h3>{product.name}</h3>
+            <p>{product.description}</p>
+            <p>Cena: {product.price.toFixed(2)} zł</p>
+            <p>W magazynie: {product.stock}</p>
+            {currentUser?.isAdmin ? (
+              <div className="admin-actions">
+                <button onClick={() => onEditProduct(product)}>Edytuj</button>
+                <button onClick={() => onDeleteProduct(product.id)} className="delete-btn">Usuń</button>
+              </div>
+            ) : (
+              <button onClick={() => onAddToCart(product)} disabled={product.stock === 0}>
+                {product.stock === 0 ? 'Brak w magazynie' : 'Dodaj do zamówienia'}
+              </button>
             )}
           </div>
         ))}
@@ -362,7 +508,6 @@ function ProductsView({ products, onAddToCart, currentUser, onDeleteProduct, onE
   );
 }
 
-// Komponent widoku aktualnego zamówienia (koszyka)
 function CurrentOrderView({ items, onUpdateQuantity, onPlaceOrder, isOrderView }) {
     const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   
@@ -396,32 +541,84 @@ function CurrentOrderView({ items, onUpdateQuantity, onPlaceOrder, isOrderView }
       </div>
     );
   }
-
-// Komponent listy zamówień użytkownika
-function OrdersListView({ orders }) {
+  
+function OrdersListView({ orders, onViewDetails }) {
     if (!orders || orders.length === 0) {
-      return <p>Nie masz jeszcze żadnych zamówień.</p>;
+      return <p>Brak złożonych zamówień.</p>;
     }
   
     return (
       <div className="orders-list-view">
         <h2>Twoje Zamówienia</h2>
-        {orders.map(order => (
-          <div key={order.id} className="order-summary-card">
-            <h3>Zamówienie #{order.id.substring(0, 8)}...</h3>
-            <p>Data: {new Date(order.createdAt).toLocaleDateString('pl-PL')} {new Date(order.createdAt).toLocaleTimeString('pl-PL')}</p>
-            <p>Status: <span className={`status-${order.status?.toLowerCase()}`}>{order.status}</span></p>
-            <p>Suma: {order.total?.toFixed(2)} PLN</p>
-            <h4>Pozycje:</h4>
-            <ul>
-              {order.items?.map(item => (
-                <li key={item.id}>{item.product?.name || 'Produkt usunięty'} - {item.quantity} szt. x {item.price?.toFixed(2)} PLN</li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        <ul>
+          {orders.map(order => (
+            <li key={order.id} className="order-item-summary">
+              <p>ID Zamówienia: {order.id}</p>
+              <p>Status: {order.status}</p>
+              <p>Suma: {order.total ? order.total.toFixed(2) : 'N/A'} zł</p>
+              <p>Data: {new Date(order.createdAt).toLocaleDateString()}</p>
+              <button onClick={() => onViewDetails(order.id)}>Zobacz szczegóły</button>
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }
+
+function ProductFormModal({ product, formData, onChange, onSave, onClose }) {
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content product-form-modal">
+        <h3>{product ? 'Edytuj Produkt' : 'Dodaj Nowy Produkt'}</h3>
+        <label>Nazwa:</label>
+        <input type="text" name="name" value={formData.name} onChange={onChange} placeholder="Nazwa produktu" />
+        
+        <label>Opis:</label>
+        <textarea name="description" value={formData.description} onChange={onChange} placeholder="Opis produktu"></textarea>
+        
+        <label>Cena (zł):</label>
+        <input type="number" name="price" value={formData.price} onChange={onChange} placeholder="0.00" step="0.01" />
+        
+        <label>Ilość w magazynie:</label>
+        <input type="number" name="stock" value={formData.stock} onChange={onChange} placeholder="0" step="1" />
+        
+        <div className="modal-actions">
+          <button onClick={onSave} className="save-btn">{product ? 'Zapisz zmiany' : 'Dodaj Produkt'}</button>
+          <button onClick={onClose} className="cancel-btn">Anuluj</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrderDetailsView({ order, onClose }) {
+  if (!order) return null;
+
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-content order-details-modal">
+        <h3>Szczegóły Zamówienia #{order.id}</h3>
+        <p><strong>Status:</strong> {order.status}</p>
+        <p><strong>Suma całkowita:</strong> {order.total ? order.total.toFixed(2) : 'N/A'} zł</p>
+        <p><strong>Data złożenia:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+        {order.user && <p><strong>Użytkownik:</strong> {order.user.name || order.user.email} (ID: {order.userId})</p>}
+        
+        <h4>Pozycje zamówienia:</h4>
+        {order.items && order.items.length > 0 ? (
+          <ul>
+            {order.items.map(item => (
+              <li key={item.id || item.productId}>
+                {item.product ? item.product.name : `ID Produktu: ${item.productId}`} - 
+                Ilość: {item.quantity} x {item.price ? item.price.toFixed(2) : (item.product?.price.toFixed(2) || 'N/A')} zł
+              </li>
+            ))}
+          </ul>
+        ) : <p>Brak pozycji w zamówieniu.</p>}
+        
+        <button onClick={onClose} className="close-btn">Zamknij</button>
+      </div>
+    </div>
+  );
+}
 
 export default App; 

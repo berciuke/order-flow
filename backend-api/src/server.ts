@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import healthRouter from './routes/health'; 
 import authRouter from './routes/authRoutes'; 
 import userRoutes from './routes/userRoutes';
@@ -10,6 +11,21 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Niedozwolone przez CORS'));
+    }
+  },
+  credentials: true,  
+};
+
+app.use(cors(corsOptions)); 
 
 app.use(express.json());
 

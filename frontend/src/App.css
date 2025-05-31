@@ -1,12 +1,12 @@
 :root {
-  --background-color: #1E1E1E; /* Ciemne tło główne */
-  --surface-color: #2D2D2D;    /* Tło dla kart, formularzy itp. */
-  --primary-color: #BB86FC;   /* Główny kolor akcentu (fioletowy) */
-  --secondary-color: #03DAC6; /* Drugi kolor akcentu (turkusowy) */
-  --on-background-color: #E0E0E0; /* Kolor tekstu na tle głównym */
-  --on-surface-color: #FFFFFF;  /* Kolor tekstu na powierzchniach */
-  --error-color: #CF6679;      /* Kolor dla błędów */
-  --border-color: #444444;     /* Kolor ramek */
+  --background-color: #1E1E1E; 
+  --surface-color: #2D2D2D;    
+  --primary-color: #BB86FC;   
+  --secondary-color: #03DAC6; 
+  --on-background-color: #E0E0E0; 
+  --on-surface-color: #FFFFFF;  
+  --error-color: #CF6679;      
+  --border-color: #444444;     
 
   --font-primary: 'Inter', sans-serif;
   --font-monospace: 'Roboto Mono', monospace;
@@ -76,7 +76,7 @@ body {
   flex-grow: 1;
   padding: var(--padding-large);
   display: flex;
-  flex-direction: column; /* Domyślnie kolumna, dla widoków produktów/zamówień zmienimy */
+  flex-direction: column; 
   gap: var(--padding-large);
 }
 
@@ -99,13 +99,12 @@ body {
   cursor: pointer;
 }
 
-/* Styl dla formularzy autentykacji */
 .auth-form-container {
   background-color: var(--surface-color);
   padding: var(--padding-large);
   border-radius: var(--border-radius);
   max-width: 400px;
-  margin: 20px auto; /* Wyśrodkowanie */
+  margin: 20px auto; 
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
@@ -129,7 +128,7 @@ body {
 .auth-form input[type="email"],
 .auth-form input[type="password"],
 .auth-form input[type="text"] {
-  width: calc(100% - 20px); /* Uwzględnienie paddingu */
+  width: calc(100% - 20px); 
   padding: 10px;
   border: 1px solid var(--border-color);
   background-color: var(--background-color);
@@ -154,7 +153,6 @@ body {
   background-color: var(--secondary-color);
 }
 
-/* Styl dla widoku produktów */
 .products-view h2, .orders-list-view h2, .current-order-view h2 {
   color: var(--primary-color);
   margin-bottom: var(--padding-base);
@@ -179,8 +177,7 @@ body {
   text-align: center;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  position: relative; /* Dla przycisków admina */
-  aspect-ratio: 1 / 1; /* Kwadratowe kafelki */
+  position: relative; 
 }
 
 .product-tile:hover {
@@ -198,7 +195,7 @@ body {
   justify-content: center;
   font-size: 2.5em;
   font-weight: bold;
-  border-radius: 50%; /* Okrągłe tło dla litery */
+  border-radius: 50%; 
   margin-bottom: 10px;
 }
 
@@ -242,14 +239,13 @@ body {
 }
 
 
-/* Styl dla JSON Viewer */
 .json-viewer-aside {
   background-color: var(--surface-color);
   padding: var(--padding-base);
   margin-top: var(--padding-large);
   border-radius: var(--border-radius);
-  max-height: 400px; /* Ograniczenie wysokości */
-  overflow-y: auto; /* Scroll jeśli zawartość jest za długa */
+  max-height: 400px; 
+  overflow-y: auto; 
 }
 
 .json-viewer-aside h3 {
@@ -259,14 +255,14 @@ body {
 }
 
 .json-viewer-aside pre {
-  background-color: var(--background-color); /* Ciemniejsze tło dla kodu */
+  background-color: var(--background-color); 
   color: var(--on-background-color);
   padding: 10px;
   border-radius: var(--border-radius);
   font-family: var(--font-monospace);
   font-size: 0.9em;
-  white-space: pre-wrap; /* Zawijanie długich linii */
-  word-break: break-all; /* Łamanie słów */
+  white-space: pre-wrap; 
+  word-break: break-all; 
 }
 
 .json-viewer-aside button {
@@ -284,16 +280,15 @@ body {
     background-color: var(--secondary-color);
 }
 
-/* Style dla widoku aktualnego zamówienia (koszyka) */
 .current-order-view {
     background-color: var(--surface-color);
     padding: var(--padding-base);
     border-radius: var(--border-radius);
-    margin-top: var(--padding-base); /* Odstęp od produktów lub headera */
+    margin-top: var(--padding-base); 
   }
   
   .current-order-view.full-width-order {
-    width: 100%; /* Jeśli to główny widok zamówień, niech zajmuje całą szerokość */
+    width: 100%; 
   }
 
   .current-order-list {
@@ -367,7 +362,6 @@ body {
     background-color: var(--primary-color);
   }
   
-  /* Styl dla listy zamówień użytkownika */
   .orders-list-view {
     display: flex;
     flex-direction: column;
@@ -403,7 +397,7 @@ body {
   
   .order-summary-card ul {
     list-style: none;
-    padding-left: 0; /* Usunięcie domyślnego wcięcia listy */
+    padding-left: 0; 
     font-size: 0.9em;
   }
   
@@ -412,14 +406,13 @@ body {
     color: var(--on-background-color);
   }
 
-  .status-pending { color: #f39c12; font-weight: bold; } /* Pomarańczowy */
-  .status-processing { color: #3498db; font-weight: bold; } /* Niebieski */
-  .status-shipped { color: #2ecc71; font-weight: bold; } /* Zielony */
-  .status-delivered { color: #1abc9c; font-weight: bold; } /* Ciemniejszy zielony/turkusowy */
-  .status-cancelled { color: var(--error-color); font-weight: bold; } /* Czerwony */
-  .status-refunded { color: #95a5a6; font-weight: bold; } /* Szary */
-
-/* Footer */
+  .status-pending { color: #f39c12; font-weight: bold; } 
+  .status-processing { color: #3498db; font-weight: bold; } 
+  .status-shipped { color: #2ecc71; font-weight: bold; } 
+  .status-delivered { color: #1abc9c; font-weight: bold; } 
+  .status-cancelled { color: var(--error-color); font-weight: bold; } 
+  .status-refunded { color: #95a5a6; font-weight: bold; } 
+  
 .app-footer {
   background-color: var(--surface-color);
   color: var(--on-background-color);
@@ -429,7 +422,6 @@ body {
   font-size: 0.9em;
 }
 
-/* Responsywność */
 @media (max-width: 768px) {
   .app-header {
     flex-direction: column;
@@ -440,12 +432,12 @@ body {
     margin-top: 10px;
     width: 100%;
     display: flex;
-    flex-wrap: wrap; /* Przyciski mogą się zawijać */
+    flex-wrap: wrap; 
     gap: 5px;
   }
 
   .app-header nav button {
-    flex-grow: 1; /* Przyciski zajmują dostępną przestrzeń */
+    flex-grow: 1; 
     margin-left: 0;
   }
   
@@ -460,7 +452,7 @@ body {
   }
 
   .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Mniejsze kafelki na mobilkach */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
   }
 
   .product-initial {
@@ -488,7 +480,7 @@ body {
 
 @media (max-width: 480px) {
     .products-grid {
-        grid-template-columns: 1fr; /* Pojedyncza kolumna na bardzo małych ekranach */
+        grid-template-columns: 1fr; 
     }
     .app-header h1 {
         font-size: 1.5em;
@@ -500,4 +492,138 @@ body {
     .user-info span {
         font-size: 0.8em;
     }
+}
+
+.api-debugger-history {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 450px; 
+  max-height: 40vh;
+  background-color: var(--surface-color); 
+  border: 1px solid var(--primary-color); 
+  border-radius: var(--border-radius); 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+  z-index: 9999;
+  overflow-y: auto;
+  font-family: var(--font-monospace); 
+  color: var(--on-surface-color); 
+  font-size: 0.9em;
+}
+
+.api-debugger-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: var(--background-color); 
+  border-bottom: 1px solid var(--primary-color);
+  border-top-left-radius: var(--border-radius);
+  border-top-right-radius: var(--border-radius);
+}
+
+.api-debugger-header h3 {
+  margin: 0;
+  font-size: 1em;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.clear-history-btn {
+  background-color: var(--primary-color);
+  color: var(--background-color); 
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.clear-history-btn:hover {
+  background-color: var(--secondary-color);
+}
+
+.api-debugger-history ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.history-entry {
+  border-bottom: 1px solid var(--border-color); 
+}
+
+.history-entry:last-child {
+  border-bottom: none;
+}
+
+.entry-summary {
+  padding: 8px 15px;
+  cursor: pointer;
+  display: grid; 
+  gap: 10px;
+  align-items: center;
+}
+
+.entry-summary:hover {
+  background-color: var(--background-color);
+}
+
+.timestamp {
+  font-size: 0.85em;
+  color: var(--secondary-color); 
+}
+
+.status-code {
+  font-weight: bold;
+  padding: 3px 7px;
+  border-radius: var(--border-radius);
+  font-size: 0.85em;
+  text-align: center;
+}
+
+.status-200, .status-201, .status-204 {
+  background-color: var(--secondary-color); 
+  color: var(--background-color);
+}
+
+.status-400, .status-401, .status-403, .status-404 {
+  background-color: var(--error-color); 
+  color: var(--on-surface-color);
+}
+
+.status-500 {
+  background-color: #FFB74D; 
+  color: var(--background-color);
+}
+
+
+.url {
+  font-size: 0.9em;
+  color: var(--primary-color); 
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toggler {
+    font-size: 1em;
+    color: var(--primary-color);
+}
+
+.entry-details {
+  padding: 12px 15px;
+  background-color: var(--background-color); 
+  border-top: 1px dashed var(--border-color);
+}
+
+.entry-details pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 0.9em;
+  color: var(--on-background-color); 
+  max-height: 200px; 
+  overflow-y: auto; 
 } 
