@@ -1,5 +1,7 @@
 # OrderFlow – System zarządzania zamówieniami e-commerce
 
+> Plan rozwoju projektu: całkowita refaktoryzacja aktualnej formy serwisu, integracja z API Redcart.pl oraz DPD
+
 ## Opis projektu
 
 Orderflow to aplikacja oparta o architekturę mikroserwisową, służąca do obsługi, przetwarzania i zarządzania zamówieniami w sklepie internetowym. Aplikacja zbudowana jest z jasno wydzielonych mikroserwisów, komunikujących się za pomocą REST API oraz kolejki zdarzeń.
