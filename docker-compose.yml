@@ -11,6 +11,8 @@ services:
     environment:
       - DATABASE_URL=postgresql://user:password@postgres:5432/orderflow?schema=public
       - NODE_ENV=development
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
     volumes:
       - ./backend-api:/app
       - /app/node_modules
@@ -18,14 +20,41 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - app-network
+    secrets:
+      - db_password
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres:5432/orderflow?schema=public
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - LOG_LEVEL=INFO
+      - ENVIRONMENT=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
+    secrets:
+      - db_password
 
   postgres:
     image: postgres:16
     environment:
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_DB: orderflow
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -35,6 +64,41 @@ services:
       test: ["CMD-SHELL", "pg_isready -U user -d orderflow"]
       interval: 10s
       timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    secrets:
+      - db_password
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
       retries: 5
     networks:
       - app-network
@@ -79,3 +143,9 @@ networks:
 
 volumes:
   pgdata:
+  rabbitmq_data:
+  redis_data:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt

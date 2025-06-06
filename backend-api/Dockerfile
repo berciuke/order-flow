@@ -1,24 +1,21 @@
 ARG NODE_ENV=development
 
-# Etap budowania
+# Etap budowania (tylko dla produkcji)
 FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci 
+RUN npm ci
 COPY . .
-RUN if [ "$NODE_ENV" = "production" ] || [ "$NODE_ENV" != "development" ]; then \
-    npm run build; \
-    fi
+RUN npm run build
 
-
-# Etap deweloperski
+# Etap deweloperski (używa ts-node)
 FROM node:18-alpine AS development
 WORKDIR /app
 RUN apk add --no-cache curl git
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+# Generuj Prisma client dla developmentu
 RUN npx prisma generate
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
@@ -38,7 +35,7 @@ ENV PORT=${PORT}
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 COPY --from=builder /app/dist ./dist
-COPY --from=development /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 # ewentualna dokumentacja np. swagger:
 # COPY --from=builder /app/public ./public
 RUN addgroup -g 1001 -S nodejs && \
