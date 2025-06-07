@@ -6,6 +6,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# Generuj Prisma client przed build
+RUN npx prisma generate
 RUN npm run build
 
 # Etap deweloperski (używa ts-node)

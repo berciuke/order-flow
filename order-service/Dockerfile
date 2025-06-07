@@ -4,6 +4,9 @@ FROM python:3.11-slim AS base
 ARG ENVIRONMENT=development
 ARG PORT=8001
 
+# Zainstaluj curl do health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Zmienne środowiskowe
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \

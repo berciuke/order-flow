@@ -19,6 +19,9 @@ FROM nginx:alpine
 ARG NGINX_PORT=80
 ENV NGINX_PORT=${NGINX_PORT}
 
+# Zainstaluj curl do health checks
+RUN apk add --no-cache curl
+
 # Skopiuj wygenerowane pliki React do katalogu Nginx
 COPY --from=builder /app/build /usr/share/nginx/html
 
