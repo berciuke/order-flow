@@ -1,7 +1,7 @@
 {
-  "name": "spa-client",
+  "name": "fittrack-spa",
   "version": "1.0.0",
-  "description": "SPA Client OAuth2 - jak na zajęciach",
+  "description": "FitTrack SPA Client with OAuth2",
   "private": true,
   "proxy": "http://backend-api:8000",
   "dependencies": {

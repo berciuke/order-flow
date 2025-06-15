@@ -1,54 +1,53 @@
-require('dotenv').config();
-const express = require('express');
-const session = require('express-session');
-const cookieParser = require('cookie-parser');
-const axios = require('axios');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+require("dotenv").config();
+const express = require("express");
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
+const axios = require("axios");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// Middleware
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'super-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // dev mode
-    httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24 // 24 hours
-  }
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "super-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24,
+    },
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// OAuth2 Configuration
 const KEYCLOAK_CONFIG = {
   url: process.env.KEYCLOAK_URL,
   realm: process.env.KEYCLOAK_REALM,
   clientId: process.env.KEYCLOAK_CLIENT_ID,
   clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
-  redirectUri: process.env.REDIRECT_URI
+  redirectUri: process.env.REDIRECT_URI,
 };
 
-console.log('🔧 SSR Client Config:', {
+console.log("🔧 SSR Client Config:", {
   ...KEYCLOAK_CONFIG,
-  clientSecret: '***hidden***'
+  clientSecret: "***hidden***",
 });
 
-// Helper functions
 function buildAuthUrl(state) {
   const params = new URLSearchParams({
-    response_type: 'code',
+    response_type: "code",
     client_id: KEYCLOAK_CONFIG.clientId,
     redirect_uri: KEYCLOAK_CONFIG.redirectUri,
     state: state,
-    scope: 'openid profile email'
+    scope: "openid profile email",
   });
-  
+
   return `${KEYCLOAK_CONFIG.url}/auth/realms/${KEYCLOAK_CONFIG.realm}/protocol/openid-connect/auth?${params}`;
 }
 
@@ -62,56 +61,60 @@ function buildLogoutUrl() {
 
 async function exchangeCodeForToken(code) {
   const params = new URLSearchParams({
-    grant_type: 'authorization_code',
+    grant_type: "authorization_code",
     client_id: KEYCLOAK_CONFIG.clientId,
     client_secret: KEYCLOAK_CONFIG.clientSecret,
     code: code,
-    redirect_uri: KEYCLOAK_CONFIG.redirectUri
+    redirect_uri: KEYCLOAK_CONFIG.redirectUri,
   });
 
   try {
     const response = await axios.post(buildTokenUrl(), params, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
     return response.data;
   } catch (error) {
-    console.error('Token exchange error:', error.response?.data || error.message);
+    console.error(
+      "Token exchange error:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 }
 
-// Helper: Call Resource Server API
-async function callResourceAPI(endpoint, token, method = 'GET', data = null) {
+async function callResourceAPI(endpoint, token, method = "GET", data = null) {
   try {
     const config = {
       method,
       url: `${process.env.RESOURCE_API}${endpoint}`,
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     };
-    
-    if (data && method !== 'GET') {
+
+    if (data && method !== "GET") {
       config.data = data;
     }
-    
+
     const response = await axios(config);
     return response.data;
   } catch (error) {
-    console.error(`Resource API Error (${method} ${endpoint}):`, error.response?.data || error.message);
+    console.error(
+      `Resource API Error (${method} ${endpoint}):`,
+      error.response?.data || error.message
+    );
     throw error;
   }
 }
 
-// Routes
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   const user = req.session.user;
-  
+
   if (user) {
     const roles = user.realm_access?.roles || [];
-    const isAdmin = roles.includes('admin');
-    
+    const isAdmin = roles.includes("admin");
+
     res.send(`
       <!DOCTYPE html>
       <html>
@@ -132,30 +135,47 @@ app.get('/', (req, res) => {
         </head>
         <body>
           <div class="header">
-            <h1>🔐 OrderFlow SSR Demo</h1>
-            <p><strong>Authorization Code Flow</strong> - Server-Side Rendered</p>
+            <h1>🏋️ FitTrack Coach Portal</h1>
+            <p><strong>Authorization Code Flow</strong> - Portal dla trenerów i sportowców</p>
           </div>
           
           <div class="user-info">
             <h2>👋 Witaj ${user.preferred_username}!</h2>
-            <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
-            <p><strong>Role:</strong> ${roles.join(', ') || 'none'}</p>
+            <p><strong>Email:</strong> ${user.email || "N/A"}</p>
+            <p><strong>Role:</strong> ${roles.join(", ") || "none"}</p>
             <p><strong>Sub:</strong> ${user.sub}</p>
           </div>
           
-          ${isAdmin ? `
+          ${
+            roles.includes("coach")
+              ? `
             <div class="admin-panel">
-              <h3>👑 Panel Administratora</h3>
-              <p>Masz uprawnienia administratora!</p>
+              <h3>👨‍🏫 Panel Trenera</h3>
+              <p>Masz uprawnienia trenera personalnego!</p>
+              <button class="btn-primary" onclick="testAPI('/api/coach-panel')">Moi Podopieczni</button>
+            </div>
+          `
+              : ""
+          }
+          
+          ${
+            isAdmin
+              ? `
+            <div class="admin-panel">
+              <h3>👑 Panel Administratora FitTrack</h3>
+              <p>Zarządzanie platformą fitness!</p>
               <button class="btn-primary" onclick="window.location.href='/admin'">Admin Dashboard</button>
             </div>
-          ` : ''}
+          `
+              : ""
+          }
           
           <div class="api-section">
-            <h3>🌐 Test Resource Server API</h3>
+            <h3>💪 Test Fitness API</h3>
             <button class="btn-primary" onclick="testAPI('/health')">Test Health</button>
+            <button class="btn-primary" onclick="testAPI('/api/exercises')">Baza Ćwiczeń</button>
+            <button class="btn-primary" onclick="testAPI('/api/workouts')">Moje Treningi</button>
             <button class="btn-primary" onclick="testAPI('/api/protected')">Test Protected</button>
-            <button class="btn-primary" onclick="testAPI('/api/products')">Test Products</button>
             <div id="apiResult"></div>
           </div>
           
@@ -227,131 +247,137 @@ app.get('/', (req, res) => {
   }
 });
 
-app.get('/login', (req, res) => {
-  // Generate random state for CSRF protection
-  const state = crypto.randomBytes(16).toString('hex');
+app.get("/login", (req, res) => {
+  const state = crypto.randomBytes(16).toString("hex");
   req.session.oauth_state = state;
-  
+
   const authUrl = buildAuthUrl(state);
-  console.log('🔐 Redirecting to Keycloak:', authUrl);
-  
+  console.log("🔐 Redirecting to Keycloak:", authUrl);
+
   res.redirect(authUrl);
 });
 
-app.get('/callback', async (req, res) => {
+app.get("/callback", async (req, res) => {
   const { code, state, error } = req.query;
-  
-  // Check for OAuth errors
+
   if (error) {
-    console.error('OAuth error:', error);
-    return res.send(`<h1>❌ OAuth Error</h1><p>${error}</p><a href="/">Powrót</a>`);
+    console.error("OAuth error:", error);
+    return res.send(
+      `<h1>❌ OAuth Error</h1><p>${error}</p><a href="/">Powrót</a>`
+    );
   }
-  
-  // Verify state (CSRF protection)
+
   if (state !== req.session.oauth_state) {
-    console.error('State mismatch:', { received: state, expected: req.session.oauth_state });
-    return res.send('<h1>❌ Security Error</h1><p>Invalid state parameter</p><a href="/">Powrót</a>');
+    console.error("State mismatch:", {
+      received: state,
+      expected: req.session.oauth_state,
+    });
+    return res.send(
+      '<h1>❌ Security Error</h1><p>Invalid state parameter</p><a href="/">Powrót</a>'
+    );
   }
-  
+
   if (!code) {
-    return res.send('<h1>❌ Error</h1><p>No authorization code received</p><a href="/">Powrót</a>');
+    return res.send(
+      '<h1>❌ Error</h1><p>No authorization code received</p><a href="/">Powrót</a>'
+    );
   }
-  
+
   try {
-    console.log('🔄 Exchanging code for token...');
+    console.log("🔄 Exchanging code for token...");
     const tokenData = await exchangeCodeForToken(code);
-    
-    // Decode the ID token
+
     const user = jwt.decode(tokenData.id_token);
-    
-    // Store user data and tokens in session
+
     req.session.user = user;
     req.session.tokens = {
       access_token: tokenData.access_token,
       refresh_token: tokenData.refresh_token,
-      id_token: tokenData.id_token
+      id_token: tokenData.id_token,
     };
-    
-    // Clear OAuth state
+
     delete req.session.oauth_state;
-    
-    console.log('✅ User authenticated:', user.preferred_username);
-    
-    res.redirect('/');
+
+    console.log("✅ User authenticated:", user.preferred_username);
+
+    res.redirect("/");
   } catch (error) {
-    console.error('Token exchange failed:', error);
-    res.send(`<h1>❌ Authentication Failed</h1><p>${error.message}</p><a href="/">Powrót</a>`);
+    console.error("Token exchange failed:", error);
+    res.send(
+      `<h1>❌ Authentication Failed</h1><p>${error.message}</p><a href="/">Powrót</a>`
+    );
   }
 });
 
-app.get('/logout', (req, res) => {
-  const logoutUrl = buildLogoutUrl() + '?redirect_uri=' + encodeURIComponent('http://localhost:3002/');
-  
-  // Clear session
+app.get("/logout", (req, res) => {
+  const logoutUrl =
+    buildLogoutUrl() +
+    "?redirect_uri=" +
+    encodeURIComponent("http://localhost:3002/");
+
   req.session.destroy((err) => {
     if (err) {
-      console.error('Session destroy error:', err);
+      console.error("Session destroy error:", err);
     }
-    console.log('🚪 User logged out');
+    console.log("🚪 User logged out");
     res.redirect(logoutUrl);
   });
 });
 
-app.get('/admin', (req, res) => {
+app.get("/admin", (req, res) => {
   const user = req.session.user;
-  
+
   if (!user) {
-    return res.redirect('/login');
+    return res.redirect("/login");
   }
-  
+
   const roles = user.realm_access?.roles || [];
-  if (!roles.includes('admin')) {
-    return res.send('<h1>❌ Access Denied</h1><p>Admin role required</p><a href="/">Powrót</a>');
+  if (!roles.includes("admin")) {
+    return res.send(
+      '<h1>❌ Access Denied</h1><p>Admin role required</p><a href="/">Powrót</a>'
+    );
   }
-  
+
   res.send(`
     <h1>👑 Admin Dashboard</h1>
     <p>Witaj w panelu administratora, ${user.preferred_username}!</p>
-    <p>Role: ${roles.join(', ')}</p>
+    <p>Role: ${roles.join(", ")}</p>
     <a href="/">← Powrót</a>
   `);
 });
 
-// API Test endpoint
-app.get('/api-test/*', async (req, res) => {
+app.get("/api-test/*", async (req, res) => {
   const user = req.session.user;
   const tokens = req.session.tokens;
-  
+
   if (!user || !tokens) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    return res.status(401).json({ error: "Not authenticated" });
   }
-  
-  const endpoint = req.path.replace('/api-test', '');
-  
+
+  const endpoint = req.path.replace("/api-test", "");
+
   try {
     const result = await callResourceAPI(endpoint, tokens.access_token);
     res.json(result);
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       error: error.message,
-      endpoint: endpoint 
+      endpoint: endpoint,
     });
   }
 });
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
-    service: 'ssr-client',
-    oauth2: 'ready',
-    timestamp: new Date().toISOString()
+app.get("/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    service: "ssr-client",
+    oauth2: "ready",
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 SSR Client running on http://localhost:${PORT}`);
-  console.log('🔧 OAuth2 Authorization Code Flow ready');
-  console.log('🔗 Keycloak URL:', KEYCLOAK_CONFIG.url);
-}); 
+  console.log("🔧 OAuth2 Authorization Code Flow ready");
+  console.log("🔗 Keycloak URL:", KEYCLOAK_CONFIG.url);
+});

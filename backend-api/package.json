@@ -1,7 +1,7 @@
 {
-  "name": "resource-server",
+  "name": "fittrack-workout-api",
   "version": "1.0.0",
-  "description": "Resource Server",
+  "description": "FitTrack Workout API - Resource Server",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
