@@ -1,169 +1,65 @@
+# docker-compose.yml - PROSTY JAK NA ZAJĘCIACH LAB02!
+version: "3.8"
+
 services:
+  postgres:
+    image: postgres:16.2
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak  
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.6
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
   backend-api:
-    build:
-      context: ./backend-api
-      dockerfile: Dockerfile
-      target: development
+    build: ./backend-api
     ports:
       - "8000:8000"
-    env_file:
-      - ./backend-api/.env
     environment:
-      - DATABASE_URL=postgresql://user:supersecretpassword123@postgres:5432/orderflow?schema=public
-      - NODE_ENV=development
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - REDIS_URL=redis://redis:6379
-    volumes:
-      - ./backend-api:/app
-      - /app/node_modules
-    command: sh -c "npx prisma migrate dev --name init && npm run dev"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app-network
-    secrets:
-      - db_password
+      - PORT=8000
+      - KEYCLOAK_URL=http://localhost:8080
+      - KEYCLOAK_REALM=oauth2-app
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_KEYCLOAK_URL=http://localhost:8080
+      - REACT_APP_KEYCLOAK_REALM=oauth2-app
+      - REACT_APP_KEYCLOAK_CLIENT_ID=spa-client
+
+  ssr-client:
+    build: ./ssr-client  
+    ports:
+      - "3002:3002"
+    environment:
+      - KEYCLOAK_URL=http://localhost:8080
+      - KEYCLOAK_REALM=oauth2-app
+      - KEYCLOAK_CLIENT_ID=ssr-client
+      - KEYCLOAK_CLIENT_SECRET=secret123
 
   order-service:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
+    build: ./order-service
     ports:
       - "8001:8001"
     environment:
-      - DATABASE_URL=postgresql://user:supersecretpassword123@postgres:5432/orderflow?schema=public
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - LOG_LEVEL=INFO
-      - ENVIRONMENT=development
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - app-network
-    secrets:
-      - db_password
-
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
-      POSTGRES_DB: orderflow
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d orderflow"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-    secrets:
-      - db_password
-
-  rabbitmq:
-    image: rabbitmq:3.12-management-alpine
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-
-  redis:
-    image: redis:7-alpine
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    networks:
-      - app-network
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        REACT_APP_BACKEND_URL: ""
-    ports:
-      - "3000:80"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    depends_on:
-      - backend-api
-    networks:
-      - app-network
-
-  frontend-dev:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3001:3000"
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
-    networks:
-      - app-network
-    depends_on:
-      - backend-api
-    stdin_open: true
-    tty: true
-
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  pgdata:
-  rabbitmq_data:
-  redis_data:
-
-secrets:
-  db_password:
-    file: ./secrets/db_password.txt
+      - CLIENT_ID=b2b-client
+      - CLIENT_SECRET=secret123
+      - TOKEN_ENDPOINT=http://localhost:8080/realms/oauth2-app/protocol/openid-connect/token
+      - RESOURCE_API=http://localhost:8000
