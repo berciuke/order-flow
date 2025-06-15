@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { verifyToken, requireRole } = require('./auth');
+const { verifyToken, requireRole, debugToken } = require('./auth');
 
 const app = express();
 
@@ -46,6 +46,9 @@ app.post('/api/orders', verifyToken, (req, res) => {
     user: req.user.username 
   });
 });
+
+// Debug endpoint for token inspection
+app.get('/api/debug/token', verifyToken, debugToken);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
