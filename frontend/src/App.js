@@ -1,123 +1,116 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Keycloak from "keycloak-js";
 
-// tymczasowo mockuję oauth2
-const mockAuth = {
-  authenticated: false,
-  user: null,
-  token: null,
-};
+// Konfiguracja Keycloak - jak na zajęciach
+const keycloak = new Keycloak({
+  url: process.env.REACT_APP_KEYCLOAK_URL || "http://localhost:8080",
+  realm: process.env.REACT_APP_KEYCLOAK_REALM || "oauth2-app",
+  clientId: process.env.REACT_APP_KEYCLOAK_CLIENT_ID || "spa-client"
+});
 
 function App() {
-  const [auth, setAuth] = useState(mockAuth);
+  const [auth, setAuth] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [view, setView] = useState("home");
 
-  // tymczasowo mockuję login
-  const login = () => {
-    console.log("Mock login...");
-    setAuth({
-      authenticated: true,
-      user: { username: "testuser", roles: ["user"] },
-      token: "mock-jwt-token-123",
+  useEffect(() => {
+    // Inicjalizacja Keycloak - jak na zajęciach
+    keycloak.init({
+      onLoad: 'check-sso',
+      pkceMethod: 'S256',
+      checkLoginIframe: false  // Fix CSP frame-ancestors
+    }).then(authenticated => {
+      setAuth(authenticated);
+      setLoading(false);
+      
+      if (authenticated) {
+        setUser(keycloak.tokenParsed);
+        console.log('Zalogowany:', keycloak.tokenParsed.preferred_username);
+      }
+    }).catch(error => {
+      console.error('Keycloak error:', error);
+      setLoading(false);
     });
+  }, []);
+
+  // Login - jak na zajęciach
+  const login = () => {
+    keycloak.login();
   };
 
-  // tymczasowo mockuję logout
+  // Logout - jak na zajęciach  
   const logout = () => {
-    console.log("Mock logout...");
-    setAuth(mockAuth);
-    setView("home");
+    keycloak.logout();
   };
 
-  // tymczasowo mockuję API call
+  // Wywołanie API - jak na zajęciach
   const callAPI = async (endpoint) => {
-    console.log(`Mock API call: ${endpoint}`);
+    if (!auth) return;
 
-    if (endpoint === "/api/products") {
-      setProducts([
-        { id: 1, name: "Laptop", price: 2999, stock: 5 },
-        { id: 2, name: "Mysz", price: 99, stock: 10 },
-        { id: 3, name: "Klawiatura", price: 299, stock: 3 },
-      ]);
-    }
-    if (endpoint === "/api/orders") {
-      setOrders([
-        { id: 1, status: "PENDING", total: 2999, date: "2024-01-15" },
-        { id: 2, status: "SHIPPED", total: 398, date: "2024-01-10" },
-      ]);
+    try {
+      const response = await fetch(`http://localhost:8000${endpoint}`, {
+        headers: {
+          'Authorization': `Bearer ${keycloak.token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (endpoint === "/api/products") {
+        setProducts(data);
+      }
+      
+      console.log('API response:', data);
+    } catch (error) {
+      console.error('API error:', error);
     }
   };
+
+  // Loading screen - jak na zajęciach
+  if (loading) {
+    return (
+      <div className="container">
+        <h1>🔄 Ładowanie...</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
       <div className="header">
-        <h1>SPA OAuth2 Demo</h1>
-        {auth.authenticated ? (
+        <h1>🔐 OAuth2 SPA Demo</h1>
+        <p>Authorization Code + PKCE</p>
+        
+        {auth ? (
           <div>
-            Witaj {auth.user.username}!
-            <button
-              className="button"
-              style={{ marginLeft: "10px" }}
-              onClick={logout}
-            >
-              Wyloguj
-            </button>
+            <p>Witaj <strong>{user?.preferred_username}</strong>!</p>
+            <p>Role: {user?.realm_access?.roles?.join(', ') || 'brak'}</p>
+            <button className="button" onClick={logout}>Wyloguj</button>
           </div>
         ) : (
-          <button className="button" onClick={login}>
-            Zaloguj (Mock)
-          </button>
+          <button className="button" onClick={login}>Zaloguj przez Keycloak</button>
         )}
       </div>
 
-      {auth.authenticated ? (
-        <>
+      {auth && (
+        <div>
           <div className="nav">
-            <button className="button" onClick={() => setView("products")}>
-              Produkty
-            </button>
-            <button className="button" onClick={() => setView("orders")}>
-              Zamówienia
-            </button>
-            <button className="button" onClick={() => setView("api")}>
-              Test API
-            </button>
+            <button className="button" onClick={() => setView("products")}>Produkty</button>
+            <button className="button" onClick={() => setView("api")}>Test API</button>
           </div>
 
           {view === "products" && (
-            <div>
-              <h2>Produkty</h2>
-              <button
-                className="button"
-                onClick={() => callAPI("/api/products")}
-              >
+            <div className="card">
+              <h2>📦 Produkty</h2>
+              <button className="button" onClick={() => callAPI("/api/products")}>
                 Pobierz produkty
               </button>
-              {products.map((product) => (
+              {products.map(product => (
                 <div key={product.id} className="card">
                   <h3>{product.name}</h3>
-                  <p>
-                    Cena: {product.price} zł | Dostępne: {product.stock}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {view === "orders" && (
-            <div>
-              <h2>Zamówienia</h2>
-              <button className="button" onClick={() => callAPI("/api/orders")}>
-                Pobierz zamówienia
-              </button>
-              {orders.map((order) => (
-                <div key={order.id} className="card">
-                  <h3>Zamówienie #{order.id}</h3>
-                  <p>
-                    Status: {order.status} | Suma: {order.total} zł
-                  </p>
-                  <p>Data: {order.date}</p>
+                  <p>Cena: {product.price} zł</p>
                 </div>
               ))}
             </div>
@@ -125,32 +118,26 @@ function App() {
 
           {view === "api" && (
             <div className="card">
-              <h2>Test API</h2>
-              <p>
-                <strong>Token:</strong> {auth.token}
-              </p>
-              <p>
-                <strong>User:</strong> {auth.user.username}
-              </p>
-              <p>
-                <strong>Roles:</strong> {auth.user.roles.join(", ")}
-              </p>
-              <button
-                className="button"
-                onClick={() => callAPI("/api/protected")}
-              >
-                Wywołaj chroniony endpoint
-              </button>
+              <h2>🌐 Test API</h2>
+              <p><strong>Token:</strong> {keycloak.token?.substring(0, 50)}...</p>
+              <p><strong>User:</strong> {user?.preferred_username}</p>
+              <p><strong>Roles:</strong> {user?.realm_access?.roles?.join(", ")}</p>
+              
+              <div>
+                <button className="button" onClick={() => callAPI("/api/protected")}>Test Protected</button>
+                <button className="button" onClick={() => callAPI("/api/data")}>Test Data</button>
+                <button className="button" onClick={() => callAPI("/api/admin")}>Test Admin</button>
+              </div>
             </div>
           )}
-        </>
-      ) : (
+        </div>
+      )}
+
+      {!auth && (
         <div className="card">
-          <h2>Wymagane logowanie</h2>
-          <p>Zaloguj się aby korzystać z aplikacji</p>
-          <p>
-            <em>(Mock OAuth2 - kliknij "Zaloguj" powyżej)</em>
-          </p>
+          <h2>🔐 Wymagane logowanie</h2>
+          <p>Zaloguj się przez Keycloak</p>
+          <p><strong>Keycloak URL:</strong> {process.env.REACT_APP_KEYCLOAK_URL || "http://localhost:8080"}</p>
         </div>
       )}
     </div>
