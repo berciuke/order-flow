@@ -1,39 +1,27 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from app.client import get_access_token, call_api
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-app = FastAPI(
-    title="Order Service",
-    description="Mikroserwis do przetwarzania zamówień",
-    version="1.0.0"
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Order Service uruchomiony pomyślnie")
-
-@app.get("/health")
-async def health():
-    return {"status": "healthy", "service": "order-service"}
+app = FastAPI()
 
 @app.get("/")
-async def root():
-    return {"message": "Order Service API", "version": "1.0.0"}
+def root():
+    return {"message": "B2B Client"}
 
-@app.get("/orders/{order_id}")
-async def get_order(order_id: int):
-    return {"order_id": order_id, "status": "pending", "message": "Order Service działa poprawnie"}
+@app.get("/test-oauth2")
+def test_oauth2():
+    try:
+        print('B2B OAuth2 test...')  
+        token = get_access_token()
+        print(f'Token: {token[:20]}...')
+        
+        data = call_api('/api/data')
+        print('API Response:', data)
+        
+        return {"status": "success", "data": data}
+    except Exception as e:
+        print('Error:', str(e))  
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
