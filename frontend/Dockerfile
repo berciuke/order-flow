@@ -1,32 +1,12 @@
-# ------------------------------------------------------
-# 1) Etap budowania React
-FROM node:18-alpine AS builder
-
-# Zdefiniuj argument, który przyjmie wartość podczas docker-compose build
-ARG REACT_APP_BACKEND_URL
-ENV REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+FROM node:18-alpine
 
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm install --frozen-lockfile
+
+COPY package*.json ./
+RUN npm install
+
 COPY . .
-RUN npm run build
 
-# ------------------------------------------------------
-# 2) Etap serwowania plików przez Nginx
-FROM nginx:alpine
+EXPOSE 3000
 
-ARG NGINX_PORT=80
-ENV NGINX_PORT=${NGINX_PORT}
-
-# Zainstaluj curl do health checks
-RUN apk add --no-cache curl
-
-# Skopiuj wygenerowane pliki React do katalogu Nginx
-COPY --from=builder /app/build /usr/share/nginx/html
-
-# Skopiuj naszą konfigurację Nginx, która reguluje proxy /api
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE ${NGINX_PORT}
-CMD ["nginx", "-g", "daemon off;"] 
+CMD ["npm", "start"] 
