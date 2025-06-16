@@ -1,54 +1,84 @@
-from fastapi import FastAPI
-from app.client import get_access_token, call_api
 import logging
+from fastapi import FastAPI, HTTPException
+from app.client import get_access_token, call_api
 
-app = FastAPI(title="FitTrack Training Service", description="Microservice for workout planning")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-@app.get("/")
-def root():
-    return {"message": "FitTrack Training Service", "version": "1.0.0"}
+app = FastAPI(
+    title="FitTrack Training Service", 
+    description="Microservice for workout planning",
+    version="1.0.0"
+)
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "training-service", 
+        "version": "1.0.0"
+    }
 
 @app.get("/api/training-plans")
 def get_training_plans():
+    logger.info("Fetching training plans")
     return [
-        {"id": 1, "name": "Beginner Full Body", "weeks": 8, "level": "beginner"},
+        {"id": 1, "name": "Beginner Full Body", "weeks": 8, "level": "beginner"}, 
         {"id": 2, "name": "Advanced Powerlifting", "weeks": 12, "level": "advanced"},
         {"id": 3, "name": "HIIT Cardio", "weeks": 6, "level": "intermediate"},
         {"id": 4, "name": "Yoga & Flexibility", "weeks": 10, "level": "beginner"}
     ]
 
-@app.get("/api/create-workout")
-def create_workout_plan():
+@app.post("/api/sync-exercises")
+async def sync_exercises():
     try:
-        print('Training Service - tworzenie planu...')  
-        token = get_access_token()
-        print(f'Token: {token[:20]}...')
+        logger.info("Starting exercise sync with backend API")
         
-        workout_data = call_api('/api/workouts')
-        print('Workout API Response:', workout_data)
+        token = get_access_token()
+        logger.info("OAuth2 token obtained")
+        
+        exercises_data = call_api('/api/exercises')
+        logger.info(f"Retrieved {len(exercises_data)} exercises from backend")
+        
+        enhanced_exercises = []
+        for exercise in exercises_data:
+            enhanced_exercises.append({
+                **exercise,
+                "training_service_processed": True,
+                "recommended_sets": 3 if exercise['difficulty'] == 'beginner' else 4,
+                "recommended_reps": "8-12" if exercise['difficulty'] == 'beginner' else "6-10"
+            })
         
         return {
-            "status": "success", 
-            "message": "Plan treningowy stworzony",
-            "data": workout_data
+            "status": "success",
+            "message": f"Synced {len(enhanced_exercises)} exercises",
+            "data": enhanced_exercises
         }
+        
     except Exception as e:
-        print('Error:', str(e))  
-        return {"status": "error", "message": str(e)}
+        logger.error(f"❌ Exercise sync failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}")
 
 @app.get("/test-oauth2")
 def test_oauth2():
     try:
-        print('Training Service OAuth2 test...')  
+        logger.info("Testing OAuth2 integration...")
+        
         token = get_access_token()
-        print(f'Token: {token[:20]}...')
+        logger.info("Token obtained successfully")
         
         data = call_api('/api/exercises')
-        print('Exercises API Response:', data)
+        logger.info("Backend API call successful")
         
-        return {"status": "success", "service": "training", "data": data}
+        return {
+            "status": "success", 
+            "service": "training-service",
+            "backend_integration": "working",
+            "exercises_count": len(data),
+            "sample_exercise": data[0] if data else None
+        }
     except Exception as e:
-        print('Error:', str(e))  
+        logger.error(f"❌ OAuth2 test failed: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
