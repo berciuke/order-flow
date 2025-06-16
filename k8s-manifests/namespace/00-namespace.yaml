@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: orderflow
-  labels:
-    name: orderflow
-    project: tech-chmurowe-etap2 
