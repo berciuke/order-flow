@@ -1,22 +1,23 @@
-# docker-compose.yml - FitTrack Platform with OAuth2!
 version: "3.8"
 
 services:
-  postgres:
+  postgres-keycloak:
     image: postgres:16.2
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak  
       POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data
+    networks:
+      - app-network
 
   keycloak:
     image: quay.io/keycloak/keycloak:23.0.6
     command: start-dev
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: password
       KEYCLOAK_ADMIN: admin
@@ -24,7 +25,9 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      - postgres-keycloak
+    networks:
+      - app-network
 
   backend-api:
     build: ./backend-api
@@ -32,8 +35,10 @@ services:
       - "8000:8000"
     environment:
       - PORT=8000
-      - KEYCLOAK_URL=http://localhost:8080
+      - KEYCLOAK_URL=http://keycloak:8080
       - KEYCLOAK_REALM=oauth2-app
+    networks:
+      - app-network
 
   frontend:
     build: ./frontend
@@ -43,16 +48,21 @@ services:
       - REACT_APP_KEYCLOAK_URL=http://localhost:8080
       - REACT_APP_KEYCLOAK_REALM=oauth2-app
       - REACT_APP_KEYCLOAK_CLIENT_ID=spa-client
+    networks:
+      - app-network
 
   ssr-client:
     build: ./ssr-client  
     ports:
       - "3002:3002"
     environment:
-      - KEYCLOAK_URL=http://localhost:8080
+      - KEYCLOAK_URL=http://keycloak:8080
       - KEYCLOAK_REALM=oauth2-app
       - KEYCLOAK_CLIENT_ID=ssr-client
       - KEYCLOAK_CLIENT_SECRET=secret123
+      - RESOURCE_API=http://backend-api:8000
+    networks:
+      - app-network
 
   training-service:
     build: ./order-service
@@ -61,5 +71,14 @@ services:
     environment:
       - CLIENT_ID=training-service-client
       - CLIENT_SECRET=secret123
-      - TOKEN_ENDPOINT=http://localhost:8080/realms/oauth2-app/protocol/openid-connect/token
-      - RESOURCE_API=http://localhost:8000
+      - TOKEN_ENDPOINT=http://keycloak:8080/realms/oauth2-app/protocol/openid-connect/token
+      - RESOURCE_API=http://backend-api:8000
+    networks:
+      - app-network
+
+volumes:
+  keycloak_data:
+
+networks:
+  app-network:
+    driver: bridge

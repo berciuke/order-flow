@@ -23,10 +23,10 @@ def health_check():
 def get_training_plans():
     logger.info("Fetching training plans")
     return [
-        {"id": 1, "name": "Beginner Full Body", "weeks": 8, "level": "beginner"}, 
-        {"id": 2, "name": "Advanced Powerlifting", "weeks": 12, "level": "advanced"},
-        {"id": 3, "name": "HIIT Cardio", "weeks": 6, "level": "intermediate"},
-        {"id": 4, "name": "Yoga & Flexibility", "weeks": 10, "level": "beginner"}
+        {"id": 1, "name": "Trening całego ciała dla początkujących", "weeks": 8, "level": "beginner"}, 
+        {"id": 2, "name": "Sesja powerliftingu", "weeks": 12, "level": "advanced"},
+        {"id": 3, "name": "HIIT – intensywny trening cardio", "weeks": 6, "level": "intermediate"},
+        {"id": 4, "name": "Yoga i rozciąganie", "weeks": 10, "level": "beginner"}
     ]
 
 @app.post("/api/sync-exercises")
@@ -56,7 +56,7 @@ async def sync_exercises():
         }
         
     except Exception as e:
-        logger.error(f"❌ Exercise sync failed: {str(e)}")
+        logger.error(f"Exercise sync failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Sync failed: {str(e)}")
 
 @app.get("/test-oauth2")
@@ -78,7 +78,7 @@ def test_oauth2():
             "sample_exercise": data[0] if data else None
         }
     except Exception as e:
-        logger.error(f"❌ OAuth2 test failed: {str(e)}")
+        logger.error(f"Auth2 test failed: {str(e)}")
         return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-m!# FitTrack – Platforma fitness i treningowa
+# FitTrack – Platforma fitness i treningowa
 
 ## Opis projektu
 **Projekt zaliczeniowy na "Bezpieczeństwo Aplikacji Webowych"** 
