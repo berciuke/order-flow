@@ -45,27 +45,46 @@ function App() {
     keycloak.logout();
   };
 
+  const [error, setError] = useState(null);
+
   const callAPI = async (endpoint) => {
-    if (!auth) return;
+    if (!auth) {
+      setView('error');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
 
     try {
+      if (keycloak.isTokenExpired()) {
+        await keycloak.updateToken(30);
+      }
+
       const response = await fetch(`http://localhost:8000${endpoint}`, {
         headers: {
           Authorization: `Bearer ${keycloak.token}`,
         },
       });
 
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
       const data = await response.json();
 
       if (endpoint === "/api/exercises") {
         setExercises(data);
       } else if (endpoint === "/api/workouts") {
-        setWorkouts(data);
+        setWorkouts(data.workouts || data);
       }
 
-      console.log("API response:", data);
+      console.log("API success:", data);
     } catch (error) {
       console.error("API error:", error);
+      setError(`Failed to load data: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -206,12 +225,9 @@ function App() {
               <div>
                 <button
                   className="button"
-                  onClick={() => callAPI("/api/protected")}
+                  onClick={() => callAPI("/api/exercises")}
                 >
-                  Test Protected
-                </button>
-                <button className="button" onClick={() => callAPI("/api/data")}>
-                  Test Data
+                  Test Exercises
                 </button>
                 <button
                   className="button"
@@ -219,7 +235,19 @@ function App() {
                 >
                   Test Workouts
                 </button>
+                <button
+                  className="button"
+                  onClick={() => callAPI("/api/admin")}
+                >
+                  Test Admin
+                </button>
               </div>
+              
+              {error && (
+                <div style={{ color: 'red', marginTop: '10px' }}>
+                  <strong>Error:</strong> {error}
+                </div>
+              )}
             </div>
           )}
         </div>
