@@ -8,7 +8,7 @@ router.get('/dashboard', async (req, res) => {
   }
 
   try {
-    const coachData = await callResourceAPI('/api/coach-panel', req.session.access_token);
+    const coachData = await callResourceAPI('/api/coach-panel', req.session.tokens.access_token);
     
     res.send(`
       <!DOCTYPE html>
